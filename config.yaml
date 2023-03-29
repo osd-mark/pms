@@ -1,0 +1,110 @@
+Stablecoins:
+  Universe:
+    ["BUSD", "DAI", "FRAX", "MIM", "USDC", "USDT", "USDC.E", "USDT.E", "DAI.E"]
+  Peg:
+    Red_Lower: 0.98
+    Red_Upper: 1.02
+    Amber_Lower: 0.99
+    Amber_Upper: 1.01
+    Chainlink:
+      ETHEREUM:
+        DAI: "0xaed0c38402a5d19df6e4c03f4e2dced6e29c1ee9"
+        USDC: "0x8fffffd4afb6115b954bd326cbe7b4ba576818f6"
+        USDT: "0x3e7d1eab13ad0104d2750b8863b489d65364e32d"
+      POLYGON:
+        DAI: "0x4746dec9e833a82ec7c2c1356372ccf2cfcd2f3d"
+        USDC: "0xfe4a8cc5b5b2366c1b58bea3858e81843581b2f7"
+        USDT: "0x0a6513e40db6eb1b165753ad52e80663aea50545"
+      BSC:
+        BUSD:
+        DAI: "0xaed0c38402a5d19df6e4c03f4e2dced6e29c1ee9"
+        USDC: "0x51597f405303c4377e36123cbc172b13269ea163"
+        USDT: "0xb97ad0e74fa7d920791e90258a6e2085088b4320"
+      AVALANCHE:
+        DAI: "0x51d7180eda2260cc4f6e4eebb82fef5c3c2b8300"
+        USDC: "0xf096872672f44d6eba71458d74fe67f9a77a23b9"
+        USDT: "0xebe676ee90fe1112671f19b6b7459bc678b67e8a"
+        DAI.E: "0x976d7fac81a49fa71ef20694a3c56b9efb93c30b"
+        USDC.E: "0xf096872672f44d6eba71458d74fe67f9a77a23b9"
+        USDT.E: "0xebe676ee90fe1112671f19b6b7459bc678b67e8a"
+      ARBITRUM:
+        DAI: "0xc5c8e77b397e531b8ec06bfb0048328b30e9ecfb"
+        USDC: "0x50834f3163758fcc1df9973b6e91f0f0f0434ad3"
+        USDT: "0x3f3f5df88dc9f13eac63df89ec16ef6e7e25dde7"
+      FANTOM:
+        DAI: "0x91d5defaffe2854c7d02f50c80fa1fdc8a721e52"
+        USDC: "0x2553f4eeb82d5a26427b8d1106c51499cba5d99c"
+        USDT: "0xf64b636c5dfe1d3555a847341cdc449f612307d0"
+      OPTIMISM:
+        DAI: "0x8dba75e83da73cc766a7e5a0ee71f656bab470d6"
+        USDC: "0x16a9fa2fda030272ce99b29cf780dfa30361e0f3"
+        USDT: "0xecef79e109e997bca29c1c0897ec9d7b03647f5e"
+  Volatility:
+    Red: 4
+    Amber: 2
+  Pool_Imbalance:
+    ratios:
+      pair_pool:
+        amber: 0.60
+        red: 0.70
+      tri_pool:
+        amber: 0.50
+        red: 0.65
+      quad_pool:
+        amber: 0.50
+        red: 0.65
+
+    pools:
+      [
+        "ETHEREUM_CURVE_DAI/USDC/USDT",
+        "POLYGON_CURVE_ADAI/AUSDC/AUSDT",
+        "POLYGON_QUICKSWAP_USDC/USDT",
+        "POLYGON_QUICKSWAP_DAI/USDC",
+        "AVALANCHE_CURVE_ADAI.E/AUSDC.E/AUSDT.E",
+        "BSC_PANCAKESWAP_BUSD/USDT",
+        "BSC_PANCAKESWAP_BUSD/USDC",
+        "BSC_PANCAKESWAP_BUSD/DAI",
+        "BSC_PANCAKESWAP_USDC/USDT",
+        "BSC_ELLIPSIS_BUSD/USDC/USDT",
+        "BSC_DOTDOTFINANCE_ELLIPSISVAL-BUSD/DAI/USDC/USDT",
+      ]
+Tvl:
+  Dapp_Drop:
+    Amber: 0.25
+    Red: 0.5
+  Pool_Drop:
+    Amber: 0.25
+    Red: 0.5
+  Position_Multiple:
+    Amber: 10
+    Red: 5
+Portfolio:
+  Limits:
+    Values:
+      Chain:
+        eth: 1
+        standard: 0.5
+      Token:
+        USDC: 1
+        USDT: 0.5
+        DAI: 0.3
+        BUSD: 0.5
+        standard: 0.1
+      Dapp: 0.25
+      Pool: 0.25
+    Reason:
+      Chain:
+        eth: "Ethereum Exemption: "
+        standard: "Per Blockchain: "
+      Token:
+        USDC: "USDC Exemption: "
+        USDT: "Per Fiat Backed Stablecoin: "
+        DAI: "Per Crypto Backed Stablecoin: "
+        BUSD: "Per Fiat Backed Stablecoin: "
+        standard: "Per Cryptocurrency: "
+      Dapp: "Per Dapp: "
+      Pool: "Per Pool: "
+  Gas_Tokens: ['AVAX', 'BNB', 'ETH', 'GLMR', 'MATIC']
+
+
+

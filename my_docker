@@ -1,0 +1,16 @@
+FROM python:3.10
+
+ADD main.py .
+
+RUN apt update && apt install -y libsm6 libxext6 ffmpeg libfontconfig1 libxrender1 libgl1-mesa-glx
+
+#RUN apt update && apt install '^libxcb.*-dev' libx11-xcb-dev libglu1-mesa-dev libxrender-dev libxi-dev libxkbcommon-dev libxkbcommon-x11-dev
+
+RUN pip install pandas numpy pycoingecko web3 PyQt5
+
+COPY . /modules/
+COPY . /widgets/
+
+ENV QT_DEBUG_PLUGINS=1
+
+CMD [ "python", "./main.py"]
