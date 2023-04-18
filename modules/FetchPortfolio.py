@@ -486,8 +486,12 @@ class DebankPortfolioTimeSeries(DeBankPortfolio):
 
         self.portfolio = self.update_df(self.portfolio, day_portfolio, date)'''
 
-    def get_nav_series(self):
+    def get_nav_series(self, peg_usdc_to_par=False):
         fund_assets = self.get_fund_assets()
+
+        if peg_usdc_to_par:
+            fund_assets.loc[fund_assets['Token']=='USDC', 'Price'] = 1
+            fund_assets['USD Value'] = fund_assets['Price'] * fund_assets['Position']
 
         navs = fund_assets.groupby(['Date'])['USD Value'].sum()
 
@@ -505,8 +509,8 @@ class DebankPortfolioTimeSeries(DeBankPortfolio):
 
         return navs
 
-    def get_return_series(self, rolling_window=1, annualised=False):
-        navs = self.get_nav_series()
+    def get_return_series(self, rolling_window=1, annualised=False, peg_usdc_to_par=False):
+        navs = self.get_nav_series(peg_usdc_to_par)
 
         returns = navs.pct_change()
 
@@ -525,11 +529,12 @@ class DebankPortfolioTimeSeries(DeBankPortfolio):
 
         return returns
 
+
 class PortfolioTimeSeries(DebankPortfolioTimeSeries):
-    CIRCLE_FILE_LOC = r"C:\Users\lyons\Downloads\transaction_history_20230322_095812.xlsx"
+    CIRCLE_FILE_LOC = r"C:\Users\lyons\Downloads\transaction_history_20230329_092622.csv"
     SIGNATURE_FILE_LOC = r"C:\Users\lyons\Downloads\Export-22032023.csv"
 
-    def __init__(self, circle_file_loc=None, signature_bank_file_loc=None, debank_snap_path=None, month_end=False, *__args):
+    def __init__(self, circle_file_loc=None, signature_bank_file_loc=None, month_end=False, *__args):
         super().__init__(month_end=month_end, *__args)
 
         if circle_file_loc == None:
@@ -543,7 +548,7 @@ class PortfolioTimeSeries(DebankPortfolioTimeSeries):
         self.portfolio = pd.concat([self.signet, self.circle, self.portfolio])
 
     def parse_circle_balances(self, circle_file_loc):
-        circle = pd.read_excel(circle_file_loc)
+        circle = pd.read_csv(circle_file_loc)
         circle = circle[circle['status'] == 'complete']
         circle.loc[circle['transaction_type'].isin(['On-chain Send', 'Wire Withdrawal']), 'amount'] *= -1
         circle['date'] = pd.to_datetime(circle['date'])
@@ -598,10 +603,9 @@ class PortfolioTimeSeries(DebankPortfolioTimeSeries):
 
         return signet
 
+p = PortfolioTimeSeries()
 
-port = DeBankPortfolio()
-
-pool = port.get_pool_weights()
-print(" ")
+#debank = pd.read_pickle(r"C:\Users\lyons\OneDrive - Old Street Digital\OSD Shared Drive\Data Snapping\CIF Snap\2023-03-31\CIF_debank.pkl"
 
 
+print("")

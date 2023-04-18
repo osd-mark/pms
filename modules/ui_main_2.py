@@ -406,7 +406,8 @@ class PerformanceGraphWidget(StyledGraphWidget):
 
         self.selectors_dict = {'from_date': portfolio_dates[0],
                                'to_date': portfolio_dates[-1],
-                               'rolling_window': 1, 'annualised': False, 'returns': False}
+                               'rolling_window': 1, 'annualised': False, 'returns': False,
+                               'peg_usdc': False}
 
         self.mpl_connect("motion_notify_event", self.hover)
 
@@ -415,9 +416,10 @@ class PerformanceGraphWidget(StyledGraphWidget):
     def plot_ts(self):
         if self.selectors_dict['returns']:
             ts = self.portfolio_ts.get_return_series(rolling_window=self.selectors_dict['rolling_window'],
-                                                     annualised=self.selectors_dict['annualised'])
+                                                     annualised=self.selectors_dict['annualised'],
+                                                     peg_usdc_to_par=self.selectors_dict['peg_usdc'])
         else:
-            ts = self.portfolio_ts.get_nav_series()
+            ts = self.portfolio_ts.get_nav_series(peg_usdc_to_par=self.selectors_dict['peg_usdc'])
 
         ts = ts.loc[(ts.index >= self.selectors_dict['from_date']) & (ts.index <= self.selectors_dict['to_date'])]
 
@@ -503,9 +505,14 @@ class PerformanceGraphWidget(StyledGraphWidget):
 
         self.plot_ts()
 
+    def changed_peg_usdc(self, checked_state):
+        self.selectors_dict['peg_usdc'] = checked_state
+
+        self.plot_ts()
+
 class Ui_MainWindow_Dev(object):
-    core_income_fund = DebankPortfolioTimeSeries()
-    #core_income_fund = PortfolioTimeSeries()
+    #core_income_fund = DebankPortfolioTimeSeries()
+    core_income_fund = PortfolioTimeSeries()
 
     def setupUi(self, MainWindow):
         if not MainWindow.objectName():
@@ -1855,6 +1862,10 @@ class Ui_MainWindow_Dev(object):
         self.performance_annualise_checkbox = QCheckBox()
         self.performance_annualise_checkbox.clicked.connect(canvas.changed_annualised_checkbox)
 
+        self.performance_peg_usdc_label = QLabel("Peg USDC to Par:")
+        self.performance_peg_usdc_checkbox = QCheckBox()
+        self.performance_peg_usdc_checkbox.clicked.connect(canvas.changed_peg_usdc)
+
         self.performance_top_selector_layout.addWidget(self.performance_from_date_label)
         self.performance_top_selector_layout.addWidget(self.performance_from_date_box)
         self.performance_top_selector_layout.addWidget(self.performance_to_date_label)
@@ -1865,6 +1876,8 @@ class Ui_MainWindow_Dev(object):
         self.performance_top_selector_layout.addWidget(self.performance_returns_checkbox)
         self.performance_top_selector_layout.addWidget(self.performance_annualise_label)
         self.performance_top_selector_layout.addWidget(self.performance_annualise_checkbox)
+        #self.performance_top_selector_layout.addWidget(self.performance_peg_usdc_label)
+        #self.performance_top_selector_layout.addWidget(self.performance_peg_usdc_checkbox)
 
         self.performance_vertical_layout.addWidget(canvas, stretch=1)
 
