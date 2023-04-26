@@ -191,11 +191,6 @@ class DefiPortfolioModel(PandasModel):
         self.debank_portfolio = self.portfolio_time_series.daily_portfolio_objects[date_formatted]
         self.debank_portfolio.sort_small_balances()
 
-
-        #portfolio_df = DeBankPortfolio(portfolio_snap).portfolio
-
-        #self.debank_portfolio = portfolio_df.copy(deep=True)
-
         self.aggregation_level_change(self.aggregation_level)
 
         self.table_colour_chart()
@@ -1876,8 +1871,8 @@ class Ui_MainWindow_Dev(object):
         self.performance_top_selector_layout.addWidget(self.performance_returns_checkbox)
         self.performance_top_selector_layout.addWidget(self.performance_annualise_label)
         self.performance_top_selector_layout.addWidget(self.performance_annualise_checkbox)
-        #self.performance_top_selector_layout.addWidget(self.performance_peg_usdc_label)
-        #self.performance_top_selector_layout.addWidget(self.performance_peg_usdc_checkbox)
+        self.performance_top_selector_layout.addWidget(self.performance_peg_usdc_label)
+        self.performance_top_selector_layout.addWidget(self.performance_peg_usdc_checkbox)
 
         self.performance_vertical_layout.addWidget(canvas, stretch=1)
 

@@ -222,12 +222,18 @@ class DeBankPortfolio(object):
                 self.wallet_tokens = pd.DataFrame()
                 self.contract_call_positions = pd.DataFrame()'''
 
+            if 'Trustology' in debank_snap:
+                self.trustology_balance = debank_snap['Trustology']
+            else:
+                self.trustology_balance = pd.DataFrame()
+
         else:
             self.defi_positions = get_defi_positions(add_debank_id=add_debank_id)
             self.wallet_tokens = get_wallet_tokens()
             self.contract_call_positions = get_honey_positions()
+            self.trustology_balance = pd.DataFrame()
 
-        self.portfolio = pd.concat([self.wallet_tokens, self.defi_positions, self.contract_call_positions])
+        self.portfolio = pd.concat([self.trustology_balance, self.wallet_tokens, self.defi_positions, self.contract_call_positions])
 
     def get_portfolio_stablecoins(self):
         pools = self.defi_positions['Pool'].tolist()
@@ -247,30 +253,40 @@ class DeBankPortfolio(object):
 
         return list(set(defi_positions['Debank ID'].to_list()))
 
-    def get_chain_weights(self):
+    def get_aggregated_weights(self, aggregation_level):
+        if aggregation_level not in self.AGGREGATION_LEVELS:
+            raise ValueError("Aggregation Level Not Valid")
+
         fund_assets = self.get_fund_assets()
 
-        return fund_assets.groupby('Chain')['USD Value'].sum() / fund_assets['USD Value'].sum()
+        fund_assets.loc[fund_assets['Dapp'].isin(['Fireblocks Vault', 'Circle Account', 'Signature Bank Account']), 'Pool'] = 'Wallet'
+
+        agg = fund_assets.groupby(aggregation_level)['USD Value'].sum() / fund_assets['USD Value'].sum()
+
+        if isinstance(aggregation_level, list) and len(aggregation_level):
+            agg = agg.reset_index()
+            agg['Weight'] = (agg['USD Value'] / agg['USD Value'].sum()) * 100
+
+        return agg
+
+    def get_chain_weights(self):
+        return self.get_aggregated_weights('Chain')
 
     def get_coin_weights(self):
-        fund_assets = self.get_fund_assets()
-
-        return fund_assets.groupby('Token')['USD Value'].sum() / fund_assets['USD Value'].sum()
+        return self.get_aggregated_weights('Token')
 
     def get_dapp_weights(self):
-        fund_assets = self.get_fund_assets()
-
-        return fund_assets.groupby('Dapp')['USD Value'].sum() / fund_assets['USD Value'].sum()
+        return self.get_aggregated_weights('Dapp')
 
     def get_pool_weights(self):
-        fund_assets = self.get_fund_assets()
-
+        '''
         fund_assets.loc[fund_assets['Dapp'] == 'Fireblocks Vault', 'Pool'] = 'Wallet'
         df = fund_assets.groupby(['Chain', 'Dapp', 'Pool'])['USD Value'].sum().reset_index()
         df['Weight'] = (df['USD Value'] / df['USD Value'].sum()) * 100
+        '''
+        return self.get_aggregated_weights(['Chain', 'Dapp', 'Pool'])
 
-        return df
-
+    '''
     def get_aggregated_weights(self, aggregation_level: str):
         if aggregation_level not in self.AGGREGATION_LEVELS:
             raise ValueError("Aggregation Level Not Valid")
@@ -283,7 +299,7 @@ class DeBankPortfolio(object):
             return self.get_dapp_weights()
         elif aggregation_level == 'Pool':
             return self.get_pool_weights()
-
+    '''
     def get_fund_assets(self):
         return self.portfolio[~(self.portfolio['Token'].isin(['AVAX', 'BNB', 'ETH', 'MATIC', 'GLMR']))]
 
@@ -311,7 +327,6 @@ class DeBankPortfolio(object):
         self.portfolio = pd.concat([self.portfolio, self.small_balances])
 
         self.portfolio.drop(columns='Weight', inplace=True)
-
 
 
 
@@ -514,17 +529,20 @@ class DebankPortfolioTimeSeries(DeBankPortfolio):
 
         returns = navs.pct_change()
 
+        returns = returns * 100
+
         if annualised:
             '''returns = returns + 1
             returns = returns.pow(365) - 1'''
 
             returns = returns * 365
-
-        returns = returns * 100
+            returns.name = 'Returns (%)'
+        else:
+            returns = returns * 100
+            returns.name = 'Returns (bps)'
 
         returns = returns.rolling(window=rolling_window).mean()
 
-        returns.name = 'Returns'
         returns.index.name = 'Date'
 
         return returns
@@ -597,7 +615,6 @@ class PortfolioTimeSeries(DebankPortfolioTimeSeries):
         signet['Date'] = signet['Date'].map(lambda date: datetime.datetime.strftime(date, "%Y-%m-%d"))
 
         signet = signet[signet['Date'].isin(self.portfolio['Date'])]
-        #signet['Position'].fillna(0, inplace=True)
 
         signet = signet[['Date', 'Chain', 'Dapp', 'Pool', 'Token', 'Position', 'Price', 'USD Value']]
 
