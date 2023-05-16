@@ -620,7 +620,7 @@ class PortfolioTimeSeries(DebankPortfolioTimeSeries):
 
         return signet
 
-p = PortfolioTimeSeries()
+#p = PortfolioTimeSeries()
 
 #debank = pd.read_pickle(r"C:\Users\lyons\OneDrive - Old Street Digital\OSD Shared Drive\Data Snapping\CIF Snap\2023-03-31\CIF_debank.pkl"
 

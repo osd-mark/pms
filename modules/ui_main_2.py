@@ -32,6 +32,8 @@ import matplotlib as mpl
 #import seaborn as sns
 #import matplotlib.pyplot as plt
 
+from modules.Test import FollowDotCursor
+
 global config
 
 with open("config.yaml", "r") as stream:
@@ -364,7 +366,7 @@ class TableView(QTableView):
 
 class StyledGraphWidget(FigureCanvas):
     def __init__(self, parent=None):
-        super().__init__(Figure())
+        super().__init__()
         self.setParent = parent
 
         ax = self.figure.subplots()
@@ -386,10 +388,10 @@ class StyledGraphWidget(FigureCanvas):
 
         self.ax = ax
 
-        self.annot = self.ax.annotate("x", xy=(0, 0), xytext=(-20, 20), textcoords="offset points",
+        '''self.annot = self.ax.annotate("", xy=(0, 0), xytext=(-20, 20), textcoords="offset points",
                             bbox=dict(boxstyle="round", fc="w"),
                             arrowprops=dict(arrowstyle="->"))
-        self.annot.set_visible(False)
+        self.annot.set_visible(False)'''
 
 class PerformanceGraphWidget(StyledGraphWidget):
     def __init__(self, portfolio_ts=DebankPortfolioTimeSeries(), parent=None):
@@ -404,7 +406,7 @@ class PerformanceGraphWidget(StyledGraphWidget):
                                'rolling_window': 1, 'annualised': False, 'returns': False,
                                'peg_usdc': False}
 
-        self.mpl_connect("motion_notify_event", self.hover)
+        #self.mpl_connect("motion_notify_event", self.hover)
 
         self.plot_ts()
 
@@ -436,9 +438,31 @@ class PerformanceGraphWidget(StyledGraphWidget):
         self.ax.yaxis.set_major_formatter(mpl.ticker.StrMethodFormatter('{x:,.2f}'))
         self.figure.tight_layout()
 
+        line = self.ax.get_lines()[0]
+
+        x_values = line.get_xdata()
+        y_values = line.get_ydata()
+
+        self.cursor = FollowDotCursor(self.ax, x_values, y_values, tolerance=20)
+
         self.draw()
 
     def hover(self, event):
+        vis = self.annot.get_visible()
+        line = self.plt[0]
+
+        if event.inaxes == self.ax:
+            cont, ind = line.contains(event)
+            if cont:
+                self.update_annot(ind, line)
+                self.annot.set_visible(True)
+                self.draw_idle()
+            else:
+                if vis:
+                    self.annot.set_visible(False)
+                    self.draw_idle()
+
+    '''def hover(self, event):
         line, = self.plt
         vis = self.annot.get_visible()
         if event.inaxes == self.ax:
@@ -458,10 +482,11 @@ class PerformanceGraphWidget(StyledGraphWidget):
                 if vis:
                     self.annot.set_visible(False)
                     self.figure.canvas.draw_idle()
-
+'''
     def update_annot(self, ind, line):
         x, y = line.get_data()
         self.annot.xy = (x[ind["ind"][0]], y[ind["ind"][0]])
+
         #text = "{}, {}".format(" ".join(list(map(str, ind["ind"]))),
         #                       " ".join([names[n] for n in ind["ind"]]))
         text = "{}".format(y[ind["ind"][0]]) #x[ind["ind"][0]],
@@ -476,14 +501,16 @@ class PerformanceGraphWidget(StyledGraphWidget):
                 print("over %s" % curve.get_gid())
 
     def changed_from_date(self, date):
-        self.selectors_dict['from_date'] = pd.to_datetime(date.toPyDate())
+        if pd.to_datetime(date.toPyDate()) < pd.to_datetime(self.selectors_dict['to_date']):
+            self.selectors_dict['from_date'] = pd.to_datetime(date.toPyDate())
 
-        self.plot_ts()
+            self.plot_ts()
 
     def changed_to_date(self, date):
-        self.selectors_dict['to_date'] = pd.to_datetime(date.toPyDate())
+        if pd.to_datetime(date.toPyDate()) > pd.to_datetime(self.selectors_dict['from_date']):
+            self.selectors_dict['to_date'] = pd.to_datetime(date.toPyDate())
 
-        self.plot_ts()
+            self.plot_ts()
 
     def changed_rolling_avg_window(self, window):
         self.selectors_dict['rolling_window'] = int(window)
@@ -506,8 +533,8 @@ class PerformanceGraphWidget(StyledGraphWidget):
         self.plot_ts()
 
 class Ui_MainWindow_Dev(object):
-    #core_income_fund = DebankPortfolioTimeSeries()
-    core_income_fund = PortfolioTimeSeries()
+    core_income_fund = DebankPortfolioTimeSeries()
+    #core_income_fund = PortfolioTimeSeries()
 
     def setupUi(self, MainWindow):
         if not MainWindow.objectName():
@@ -1820,7 +1847,13 @@ class Ui_MainWindow_Dev(object):
         self.performance_vertical_layout.setObjectName(u"performance_vertical_layout")
         #self.performance_vertical_layout.setContentsMargins(10, 10, 10, 10)
 
-        canvas = PerformanceGraphWidget(parent=self.performance, portfolio_ts=self.core_income_fund)
+        self.canvas = PerformanceGraphWidget(parent=self.performance, portfolio_ts=self.core_income_fund)
+        line = self.canvas.ax.get_lines()[0]
+
+        x = line.get_xdata()
+        y = line.get_ydata()
+
+        self.cursor = FollowDotCursor(self.canvas.ax, x, y, tolerance=20)
 
         self.performance_top_selector_layout = QHBoxLayout()
         self.performance_top_selector_layout.setAlignment(Qt.AlignHCenter | Qt.AlignTop)
@@ -1828,11 +1861,11 @@ class Ui_MainWindow_Dev(object):
 
         self.performance_from_date_label = QLabel("From Date:")
         self.performance_from_date_box = CalendarSelectorWidget(start_date=QDate(2022, 10, 5))
-        self.performance_from_date_box.calendar.clicked.connect(canvas.changed_from_date)
+        self.performance_from_date_box.calendar.clicked.connect(self.canvas.changed_from_date)
 
         self.performance_to_date_label = QLabel("To Date:")
         self.performance_to_date_box = CalendarSelectorWidget(start_date=QDate(2022, 10, 5))
-        self.performance_to_date_box.calendar.clicked.connect(canvas.changed_to_date)
+        self.performance_to_date_box.calendar.clicked.connect(self.canvas.changed_to_date)
 
         self.performance_rolling_avg_label = QLabel("Rolling Average Days:")
         self.performance_rolling_avg_dropdown = QComboBox()
@@ -1847,19 +1880,19 @@ class Ui_MainWindow_Dev(object):
         self.performance_rolling_avg_dropdown.setFrame(True)
         self.performance_rolling_avg_dropdown.setGeometry(QRect(70, 8, 160, 40))
 
-        self.performance_rolling_avg_dropdown.currentTextChanged.connect(canvas.changed_rolling_avg_window)
+        self.performance_rolling_avg_dropdown.currentTextChanged.connect(self.canvas.changed_rolling_avg_window)
 
         self.performance_returns_label = QLabel("Returns:")
         self.performance_returns_checkbox = QCheckBox()
-        self.performance_returns_checkbox.clicked.connect(canvas.changed_returns_checkbox)
+        self.performance_returns_checkbox.clicked.connect(self.canvas.changed_returns_checkbox)
 
         self.performance_annualise_label = QLabel("Annualise:")
         self.performance_annualise_checkbox = QCheckBox()
-        self.performance_annualise_checkbox.clicked.connect(canvas.changed_annualised_checkbox)
+        self.performance_annualise_checkbox.clicked.connect(self.canvas.changed_annualised_checkbox)
 
         self.performance_peg_usdc_label = QLabel("Peg USDC to Par:")
         self.performance_peg_usdc_checkbox = QCheckBox()
-        self.performance_peg_usdc_checkbox.clicked.connect(canvas.changed_peg_usdc)
+        self.performance_peg_usdc_checkbox.clicked.connect(self.canvas.changed_peg_usdc)
 
         self.performance_top_selector_layout.addWidget(self.performance_from_date_label)
         self.performance_top_selector_layout.addWidget(self.performance_from_date_box)
@@ -1874,7 +1907,7 @@ class Ui_MainWindow_Dev(object):
         self.performance_top_selector_layout.addWidget(self.performance_peg_usdc_label)
         self.performance_top_selector_layout.addWidget(self.performance_peg_usdc_checkbox)
 
-        self.performance_vertical_layout.addWidget(canvas, stretch=1)
+        self.performance_vertical_layout.addWidget(self.canvas, stretch=1)
 
         self.stackedWidget.addWidget(self.performance)
 
